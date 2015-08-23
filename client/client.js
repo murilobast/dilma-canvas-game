@@ -87,7 +87,7 @@ enemyMove = function(from, character) {
 
 enemyFollow = function(character, target, type) {
 	if (character.hp <= 0) {
-
+		character.dead = true;
 	} else {
 		var from = fromWhere(target, character);
 		var colide = colides(target, character);
@@ -115,7 +115,7 @@ meeleAi = function(from, colide, distance, character, target) {
 		}
 		if (character.start && character.finish && ennemyFrame == 15) {
 			if (target.hp > 0) {
-				// target.hp -= 10;
+				target.hp -= 10;
 			}
 			character.start = false;
 			character.finish = false;
@@ -141,7 +141,7 @@ mageAi = function(from, colide, distance, character, target) {
 				character.animation = animation.spellLeft;
 			}
 			if (target.hp > 0) {
-				// target.hp -= 15;
+				target.hp -= 15;
 					console.log('Bola de Fogo. Pow!!!!');
 			}
 			character.start = false;
@@ -220,7 +220,7 @@ map = [
 
 Template.game.rendered = function() {
 	var canMove = true;
-	
+
 	canvasElement = $('canvas');
 	var canvas = canvasElement.get(0).getContext("2d");
 	canvasElement.appendTo('body');
@@ -323,10 +323,14 @@ Template.game.rendered = function() {
 	draw = function() {
 		canvas.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 		renderMap(map);
-		skeleton.draw();
-		ui.healthBar(skeleton, '#eee', '#008080', 'Skeleton');
-		dilma.draw();
-		ui.healthBar(dilma, '#eee', '#008080', 'Dilma');
+		if (!skeleton.dead) {
+			skeleton.draw();
+			ui.healthBar(skeleton, '#eee', '#008080', 'Skeleton');
+		}
+		if (!dilma.dead) {
+			dilma.draw();	
+			ui.healthBar(dilma, '#eee', '#008080', 'Dilma');
+		}
 		player.draw();
 		ui.healthBar(player, '#eee', '#008080', 'Player');
 	}
