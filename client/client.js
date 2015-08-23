@@ -64,7 +64,119 @@ distanceFrom = function(a, b) {
 		return distY;
 	}
 }
+enemyMove = function(from, character) {
+	if (from == 'up') {
+		character.frame = walkFrame;
+		character.animation = animation.walkUp;
+		character.y -= 2;
+	} else if (from == 'right') {
+		character.x += 2;
+		character.frame = walkFrame;
+		character.animation = animation.walkRight;
+	} else if (from == 'down') {
+		character.y += 2;
+		character.frame = walkFrame;
+		character.animation = animation.walkDown;
+	} else if (from == 'left') {
+		character.x -= 2;
+		character.frame = walkFrame;
+		character.animation = animation.walkLeft;
+	}
+}
 
+enemyFollow = function(character, target, type) {
+	var from = fromWhere(target, character);
+	var colide = collides(target, character);
+	var distance = distanceFrom(target, character);
+	if (distance < character.safe) {
+		if (type == 'meele') meeleAi(from, colide, distance, character, target);
+		if (type == 'mage') mageAi(from, colide, distance, character, target);
+	}
+}
+
+meeleAi = function(from, colide, distance, character, target) {
+	if (ennemyFrame == 0) character.start = true;
+	if (ennemyFrame == 15) character.finish = true;
+	if (colide && distance < character.range) {
+		character.frame = ennemyFrame;
+		if (from == 'up') {
+			character.animation = animation.attackUp;
+		} else if (from == 'right') {
+			character.animation = animation.attackRight;
+		} else if (from == 'down') {
+			character.animation = animation.attackDown;
+		} else if (from == 'left') {
+			character.animation = animation.attackLeft;
+		}
+		if (character.start && character.finish && ennemyFrame == 15) {
+			if (target.hp > 0) {
+				target.hp -= 10;
+			}
+			character.start = false;
+			character.finish = false;
+		}
+	} else {
+		enemyMove(from, character);
+	}
+}
+
+mageAi = function(from, colide, distance, character, target) {
+	if (spellFrame == 0) character.start = true;
+	if (spellFrame == 4) character.finish = true;
+	if (distance < character.range) {
+		character.frame = spellFrame;
+		if (character.start && character.finish && spellFrame == 4) {
+			if (from == 'up') {
+				character.animation = animation.spellUp;
+			} else if (from == 'right') {
+				character.animation = animation.spellRight;
+			} else if (from == 'down') {
+				character.animation = animation.spellDown;
+			} else if (from == 'left') {
+				character.animation = animation.spellLeft;
+			}
+			if (target.hp > 0) {
+				target.hp -= 15;
+					console.log('Bola de Fogo. Pow!!!!');
+			}
+			character.start = false;
+			character.finish = false;
+		}
+	} else {
+		enemyMove(from, character);
+	}
+}
+
+construct = function(ctx, image, x, y, safe, range, hp) {
+	var sprite = {
+		image: image,
+		x: x,
+		y: y,
+		width: 64,
+		height: 64,
+		frame: 1,
+		safe: safe,
+		range: range,
+		start: false,
+		finish: false,
+		hp: hp,
+		animation: animation.walkRight,
+		draw: function() {
+			ctx.drawImage(
+				this.image,
+				this.width + this.frame*this.width,
+				this.animation*64,
+				this.width,
+				this.height,
+				this.x,
+				this.y,
+				this.width,
+				this.height
+			);
+		}
+	}
+	return sprite;
+}
 Template.game.helpers({
 	height: function() {
 		return CANVAS_HEIGHT;
@@ -78,29 +190,49 @@ Template.game.events({
 	
 })
 
-start = finish = false;
 dead = false;
 walkFrame = 0;
 attackFrame = 2;
 ennemyFrame = 2;
+spellFrame = 0;
 lastAnim = '';
 animation = {
 	walkUp: 8,
 	walkLeft: 9,
 	walkDown: 10,
 	walkRight: 11,
+	spellUp: 12,
+	spellLeft: 13,
+	spellDown: 14,
+	spellRight: 15,
 	attackUp: 22,
 	attackLeft: 25,
 	attackDown: 28,
 	attackRight: 31,
+	dead: 20
 }
 map = [
-	// [0,0,0,0,0,0,0,0,0,22,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,24],
-	// [0,0,0,0,0,0,0,0,0,13,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,15],
-	// [0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
-	// [0,0,0,0,0,0,0,0,0,19,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,21],
-	[0,0,0],
-	[0,0,0]
+	[0,0,0,0,0,0,0,0,0,22,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,24],
+	[0,0,0,0,0,0,0,0,0,13,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,15],
+	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
+	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
+	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
+	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
+	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
+	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
+	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
+	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
+	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
+	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
+	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
+	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
+	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
+	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
+	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
+	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
+	[0,0,0,0,0,0,0,0,0,19,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,21],
+	// [0,0,0],
+	// [0,0,0]
 ]
 
 Template.game.rendered = function() {
@@ -131,93 +263,23 @@ Template.game.rendered = function() {
 	mapImage.src = "sprites/map.png";
 
 	renderTile = function(x, y, lx, ly) {
-		canvas.drawImage(
-			mapImage,
-			lx,
-			ly,
-			16,
-			16,
-			x,
-			y,
-			16,
-			16
-		);
-	}
-	
-	var player = {
-		image: gentleImage,
-		x: 0,
-		y: 0,
-		width: 64,
-		height: 64,
-		frame: 0,
-		hp: 100,
-		animation: animation.attackRight,
-		draw: function() {
-			canvas.drawImage(
-				this.image,
-				this.width + this.frame*this.width,
-				this.animation*64,
-				this.width,
-				this.height,
-				this.x,
-				this.y,
-				this.width,
-				this.height
-			);
-		}
+		canvas.drawImage(mapImage, lx, ly, 16, 16, x, y, 16, 16);
 	}
 
-	var skeleton = {
-		image: skelletonImage,
-		x: 128,
-		y: 0,
-		width: 64,
-		height: 64,
-		frame: 0,
-		range: 30,
-		hp: 100,
-		animation: animation.attackRight,
-		draw: function() {
-			canvas.drawImage(
-				this.image,
-				this.width + this.frame*this.width,
-				this.animation*64,
-				this.width,
-				this.height,
-				this.x,
-				this.y,
-				this.width,
-				this.height
-			);
+	var player = construct(canvas, gentleImage, 4, 4, 200, 30, 100);
+	var skeleton = construct(canvas, skelletonImage, 192, 4, 200, 30, 100);
+	var dilma = construct(canvas, dilmaImage, 200, 64, 240, 120, 100);
+
+	var ui = {
+		healthBar: function(character, innerColor, outterCollor, string) {
+			canvas.fillStyle = innerColor;
+			canvas.fillRect(character.x,character.y,64,12);
+			canvas.fillStyle = outterCollor;
+			canvas.fillRect(character.x+1,character.y+1,(character.hp*62)/100,10);
+			canvas.fillStyle="#333";
+			canvas.fillText(string, character.x+4, character.y+10);
 		}
 	}
-
-	var dilma = {
-		image: dilmaImage,
-		x: 208,
-		y: 0,
-		width: 64,
-		height: 64,
-		frame: 0,
-		range: 120,
-		hp: 100,
-		animation: animation.walkRight,
-		draw: function() {
-			canvas.drawImage(
-				this.image,
-				this.width + this.frame*this.width,
-				this.animation*64,
-				this.width,
-				this.height,
-				this.x,
-				this.y,
-				this.width,
-				this.height
-			);
-		}
-	}
-
 	draw = function() {
 		canvas.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 		var y = 0;
@@ -270,26 +332,18 @@ Template.game.rendered = function() {
 			y++;
 		})
 		skeleton.draw();
-		canvas.fillStyle="#eee";
-		canvas.fillRect(skeleton.x,skeleton.y,64,12);
-		canvas.fillStyle="#008080";
-		canvas.fillRect(skeleton.x+1,skeleton.y+1,(skeleton.hp*62)/100,10);
-		canvas.fillStyle="#333";
-		canvas.fillText("Skeleton", skeleton.x+4, skeleton.y+10);
+		ui.healthBar(skeleton, '#eee', '#008080', 'Skeleton');
+		
 		dilma.draw();
-		canvas.fillStyle="#eee";
-		canvas.fillRect(dilma.x,dilma.y,64,12);
-		canvas.fillStyle="#008080";
-		canvas.fillRect(dilma.x+1,dilma.y+1,(dilma.hp*62)/100,10);
-		canvas.fillStyle="#333";
-		canvas.fillText("Dilma", dilma.x+4, dilma.y+10);
+		ui.healthBar(dilma, '#eee', '#008080', 'Dilma');
 		player.draw();
-		canvas.fillStyle="#eee";
-		canvas.fillRect(160,340,320,30);
-		canvas.fillStyle="#008080";
-		canvas.fillRect(162,342,(player.hp*316)/100,26);
-		canvas.fillStyle="#333";
-		canvas.fillText(player.hp+'/100', 300, 355);
+		ui.healthBar(player, '#eee', '#008080', 'Player');
+		// canvas.fillStyle="#eee";
+		// canvas.fillRect(160,340,320,30);
+		// canvas.fillStyle="#008080";
+		// canvas.fillRect(162,342,(player.hp*316)/100,26);
+		// canvas.fillStyle="#333";
+		// canvas.fillText(player.hp+'/100', 300, 355);
 	}
 
 	player.attack = function() {
@@ -311,55 +365,6 @@ Template.game.rendered = function() {
 			player.animation = animation.attackLeft;
 		}
 	};
-
-	skeleton.follow = function() {
-		var from = fromWhere(player, skeleton);
-		var colide = collides(player, skeleton);
-		var distance = distanceFrom(player, skeleton);
-		if (ennemyFrame == 3) start = true;
-		if (ennemyFrame == 15) finish = true;
-		if (distance < 200) {
-			if (colide && distance < skeleton.range) {
-				skeleton.frame = ennemyFrame;
-				if (from == 'up') {
-					skeleton.animation = animation.attackUp;
-				} else if (from == 'right') {
-					skeleton.animation = animation.attackRight;
-				} else if (from == 'down') {
-					skeleton.animation = animation.attackDown;
-				} else if (from == 'left') {
-					skeleton.animation = animation.attackLeft;
-				}
-				if (start && finish && ennemyFrame == 15) {
-					if (player.hp > 1) {
-						player.hp -= 20;
-					} else {
-						dead = true;
-					}
-					start = false;
-					finish = false;
-				}
-			} else {
-				if (from == 'up') {
-					skeleton.frame = walkFrame;
-					skeleton.animation = animation.walkUp;
-					skeleton.y -= 2;
-				} else if (from == 'right') {
-					skeleton.x += 2;
-					skeleton.frame = walkFrame;
-					skeleton.animation = animation.walkRight;
-				} else if (from == 'down') {
-					skeleton.y += 2;
-					skeleton.frame = walkFrame;
-					skeleton.animation = animation.walkDown;
-				} else if (from == 'left') {
-					skeleton.x -= 2;
-					skeleton.frame = walkFrame;
-					skeleton.animation = animation.walkLeft;
-				}
-			}
-		}
-	}
 
 	player.move = function() {
 		player.frame = walkFrame;
@@ -384,21 +389,40 @@ Template.game.rendered = function() {
 		}
 	}
 
+	player.death = function() {
+		player.animation = animation.dead;
+		player.frame = walkFrame;
+		if (walkFrame > 0 && !stop) {
+			walkFrame = 0;
+			stop = true;
+			console.log("You're Dead");
+		} else if (walkFrame < 4) {
+			walkFrame +=1;
+		}
+	}
+
+	var stop = false;
 	update = function() {
+		if (player.hp <= 0) {
+			dead = true;	
+		}
 		if (dead) {
-			// console.log("You're Dead");
+			player.death();
 		} else {
 			//animation handlers
-			if (frameCount > 4) {
+			if (frameCount > 6) {
 				frameCount = 0;
 			} else {
 				frameCount += 1;
 			}
-			if (frameCount == 3) {
+			if (frameCount == 4) {
 				attackFrame += 3;
 			}
-			if (frameCount == 4) {
+			if (frameCount == 5) {
 				ennemyFrame += 3;
+			}
+			if (frameCount == 5) {
+				spellFrame += 1;
 			}
 			if (walkFrame < 7) {
 				walkFrame+=1;
@@ -411,7 +435,13 @@ Template.game.rendered = function() {
 			if (ennemyFrame > 15) {
 				ennemyFrame = 0;
 			}
-			skeleton.follow();
+			if (spellFrame > 4) {
+				spellFrame = 0;
+			}
+
+			enemyFollow(skeleton, player, 'meele');
+			enemyFollow(dilma, player, 'mage');
+
 			//key events
 			if (keydown.a) {
 				player.attack();
