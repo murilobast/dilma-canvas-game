@@ -1,36 +1,37 @@
 CANVAS_WIDTH = 640;
 CANVAS_HEIGHT = 360;
 
+Template.game.helpers({
+	height: function() {
+		return CANVAS_HEIGHT;
+	},
+	width: function() {
+		return CANVAS_WIDTH;
+	}
+})
+
+Template.game.events({
+	
+})
+
 takeHit = function(character, position) {
 	character.hp -= 10;
 	if (position == 'up') {
 		character.y += 6;
 		character.animation = animation.walkUp;
-		// setTimeout(function() {
-		// 	character.y -= 3;
-		// }, 300);
 	} else if (position == 'right') {
 		character.x -= 6;
 		character.animation = animation.walkRight;
-		// setTimeout(function() {
-		// 	character.x += 6;
-		// }, 300);
 	} else if (position == 'down') {
 		character.y += 6;
 		character.animation = animation.walkDown;
-		// setTimeout(function() {
-		// 	character.y -= 3;
-		// }, 300);
 	} else if (position == 'left') {
 		character.x += 6;
 		character.animation = animation.walkLeft;
-		// setTimeout(function() {
-		// 	character.x -= 3;
-		// }, 300);
 	}
 }
 
-collides = function(a, b) {
+colides = function(a, b) {
 	return a.x < b.x + b.width &&
 		a.x + a.width > b.x &&
 		a.y < b.y + b.height &&
@@ -85,12 +86,16 @@ enemyMove = function(from, character) {
 }
 
 enemyFollow = function(character, target, type) {
-	var from = fromWhere(target, character);
-	var colide = collides(target, character);
-	var distance = distanceFrom(target, character);
-	if (distance < character.safe) {
-		if (type == 'meele') meeleAi(from, colide, distance, character, target);
-		if (type == 'mage') mageAi(from, colide, distance, character, target);
+	if (character.hp <= 0) {
+
+	} else {
+		var from = fromWhere(target, character);
+		var colide = colides(target, character);
+		var distance = distanceFrom(target, character);
+		if (distance < character.safe) {
+			if (type == 'meele') meeleAi(from, colide, distance, character, target);
+			if (type == 'mage') mageAi(from, colide, distance, character, target);
+		}
 	}
 }
 
@@ -110,7 +115,7 @@ meeleAi = function(from, colide, distance, character, target) {
 		}
 		if (character.start && character.finish && ennemyFrame == 15) {
 			if (target.hp > 0) {
-				target.hp -= 10;
+				// target.hp -= 10;
 			}
 			character.start = false;
 			character.finish = false;
@@ -136,7 +141,7 @@ mageAi = function(from, colide, distance, character, target) {
 				character.animation = animation.spellLeft;
 			}
 			if (target.hp > 0) {
-				target.hp -= 15;
+				// target.hp -= 15;
 					console.log('Bola de Fogo. Pow!!!!');
 			}
 			character.start = false;
@@ -160,6 +165,7 @@ construct = function(ctx, image, x, y, safe, range, hp) {
 		start: false,
 		finish: false,
 		hp: hp,
+		dead: false,
 		animation: animation.walkRight,
 		draw: function() {
 			ctx.drawImage(
@@ -177,25 +183,15 @@ construct = function(ctx, image, x, y, safe, range, hp) {
 	}
 	return sprite;
 }
-Template.game.helpers({
-	height: function() {
-		return CANVAS_HEIGHT;
-	},
-	width: function() {
-		return CANVAS_WIDTH;
-	}
-})
 
-Template.game.events({
-	
-})
-
+frame = 0;
 dead = false;
 walkFrame = 0;
 attackFrame = 2;
 ennemyFrame = 2;
 spellFrame = 0;
 lastAnim = '';
+
 animation = {
 	walkUp: 8,
 	walkLeft: 9,
@@ -211,23 +207,10 @@ animation = {
 	attackRight: 31,
 	dead: 20
 }
+
 map = [
 	[0,0,0,0,0,0,0,0,0,22,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,24],
 	[0,0,0,0,0,0,0,0,0,13,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,15],
-	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
-	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
-	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
-	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
-	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
-	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
-	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
-	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
-	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
-	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
-	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
-	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
-	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
-	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
 	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
 	[0,0,0,0,0,0,0,0,0,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,18],
 	[0,0,0,0,0,0,0,0,0,19,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,21],
@@ -236,9 +219,8 @@ map = [
 ]
 
 Template.game.rendered = function() {
-	var frameCount = 1;
 	var canMove = true;
-
+	
 	canvasElement = $('canvas');
 	var canvas = canvasElement.get(0).getContext("2d");
 	canvasElement.appendTo('body');
@@ -247,11 +229,11 @@ Template.game.rendered = function() {
 	setInterval(function() {
 		update();
 		draw(canvas);
+		(frame < 30) ? frame++ : frame = 0;
 	}, 1000/FPS);
 
 	var gentleImage = new Image();
 	gentleImage.src = "sprites/gentle-default.png";
-	// gentleImage.src = "sprites/gentle-full.png";
 
 	var skelletonImage = new Image();
 	skelletonImage.src = "sprites/skeleton-basic.png";
@@ -261,10 +243,6 @@ Template.game.rendered = function() {
 
 	var mapImage= new Image();
 	mapImage.src = "sprites/map.png";
-
-	renderTile = function(x, y, lx, ly) {
-		canvas.drawImage(mapImage, lx, ly, 16, 16, x, y, 16, 16);
-	}
 
 	var player = construct(canvas, gentleImage, 4, 4, 200, 30, 100);
 	var skeleton = construct(canvas, skelletonImage, 192, 4, 200, 30, 100);
@@ -280,79 +258,20 @@ Template.game.rendered = function() {
 			canvas.fillText(string, character.x+4, character.y+10);
 		}
 	}
-	draw = function() {
-		canvas.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-		var y = 0;
-		map.forEach(function(map) {
-			var x = 0;
-			map.forEach(function(tile) {
-				switch (tile) {
-					case 11:
-						renderTile(x*16,y*16, 128, 0);
-						break;
-					case 12:
-						renderTile(x*16,y*16, 16, 192);
-						break;
-					case 13:
-						renderTile(x*16,y*16, 208, 32);
-						break;
-					case 14:
-						renderTile(x*16,y*16, 224, 32);
-						break;
-					case 15:
-						renderTile(x*16,y*16, 240, 32);
-						break;
-					case 16:
-						renderTile(x*16,y*16, 208, 48);
-						break;
-					case 17:
-						renderTile(x*16,y*16, 224, 48);
-						break;
-					case 18:
-						renderTile(x*16,y*16, 240, 48);
-						break;
-					case 19:
-						renderTile(x*16,y*16, 208, 64);
-						break;
-					case 20:
-						renderTile(x*16,y*16, 224, 64);
-						break;
-					case 21:
-						renderTile(x*16,y*16, 240, 64);
-						break;
-					case 22:
-						renderTile(x*16,y*16, 208, 16);
-						break;
-					case 24:
-						renderTile(x*16,y*16, 240, 16);
-						break;
-				}
-				x++;
-			})
-			y++;
-		})
-		skeleton.draw();
-		ui.healthBar(skeleton, '#eee', '#008080', 'Skeleton');
-		
-		dilma.draw();
-		ui.healthBar(dilma, '#eee', '#008080', 'Dilma');
-		player.draw();
-		ui.healthBar(player, '#eee', '#008080', 'Player');
-		// canvas.fillStyle="#eee";
-		// canvas.fillRect(160,340,320,30);
-		// canvas.fillStyle="#008080";
-		// canvas.fillRect(162,342,(player.hp*316)/100,26);
-		// canvas.fillStyle="#333";
-		// canvas.fillText(player.hp+'/100', 300, 355);
-	}
 
 	player.attack = function() {
+		player.animation = animation.attackRight;
 		player.frame = attackFrame;
 		canMove = false;
-		var colide = collides(player, skeleton);
+		var colide = colides(player, skeleton);
 		if (colide) {
 			if (attackFrame == 12) {
-				takeHit(skeleton, fromWhere(player, skeleton));
+				if (skeleton.hp > 0 && colides(skeleton, player)) {
+					takeHit(skeleton, fromWhere(player, skeleton));
+				} 
+				if (dilma.hp > 0 && colides(dilma, player)) {
+					takeHit(dilma, fromWhere(player, dilma));
+				}
 			}
 		}
 		if (lastAnim == 'up') {
@@ -401,6 +320,17 @@ Template.game.rendered = function() {
 		}
 	}
 
+	draw = function() {
+		canvas.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+		renderMap(map);
+		skeleton.draw();
+		ui.healthBar(skeleton, '#eee', '#008080', 'Skeleton');
+		dilma.draw();
+		ui.healthBar(dilma, '#eee', '#008080', 'Dilma');
+		player.draw();
+		ui.healthBar(player, '#eee', '#008080', 'Player');
+	}
+
 	var stop = false;
 	update = function() {
 		if (player.hp <= 0) {
@@ -410,35 +340,13 @@ Template.game.rendered = function() {
 			player.death();
 		} else {
 			//animation handlers
-			if (frameCount > 6) {
-				frameCount = 0;
-			} else {
-				frameCount += 1;
-			}
-			if (frameCount == 4) {
-				attackFrame += 3;
-			}
-			if (frameCount == 5) {
-				ennemyFrame += 3;
-			}
-			if (frameCount == 5) {
-				spellFrame += 1;
-			}
-			if (walkFrame < 7) {
-				walkFrame+=1;
-			} else {
-				walkFrame = 0;
-			}
-			if (attackFrame > 15) {
-				attackFrame = 0;
-			}
-			if (ennemyFrame > 15) {
-				ennemyFrame = 0;
-			}
-			if (spellFrame > 4) {
-				spellFrame = 0;
-			}
-
+			if (frame % 3 == 0) attackFrame += 3;
+			if (frame % 5 == 0) ennemyFrame += 3;
+			if (frame % 6 == 0) spellFrame ++;
+			if (attackFrame > 15) attackFrame = 3;
+			if (ennemyFrame > 15) ennemyFrame = 3;
+			if (spellFrame > 4) spellFrame = 0;
+			(walkFrame < 7) ? walkFrame+=1 :  walkFrame = 0;
 			enemyFollow(skeleton, player, 'meele');
 			enemyFollow(dilma, player, 'mage');
 
@@ -447,9 +355,7 @@ Template.game.rendered = function() {
 				player.attack();
 			} else {
 				player.frame = 0;
-				if (!canMove) {
-					canMove = true;
-				}
+				canMove = true;
 			}
 			if (canMove) {
 				player.move();
@@ -457,4 +363,33 @@ Template.game.rendered = function() {
 		}
 	}
 
+	renderTile = function(x, y, lx, ly) {
+		canvas.drawImage(mapImage, lx, ly, 16, 16, x, y, 16, 16);
+	}
 };
+
+renderMap = function(map) {
+	var y = 0;
+	map.forEach(function(map) {
+		var x = 0;
+		map.forEach(function(tile) {
+			switch (tile) {
+				case 11: renderTile(x*16,y*16, 128, 0); break;
+				case 12: renderTile(x*16,y*16, 16, 192); break;
+				case 13: renderTile(x*16,y*16, 208, 32); break;
+				case 14: renderTile(x*16,y*16, 224, 32); break;
+				case 15: renderTile(x*16,y*16, 240, 32); break;
+				case 16: renderTile(x*16,y*16, 208, 48); break;
+				case 17: renderTile(x*16,y*16, 224, 48); break;
+				case 18: renderTile(x*16,y*16, 240, 48); break;
+				case 19: renderTile(x*16,y*16, 208, 64); break;
+				case 20: renderTile(x*16,y*16, 224, 64); break;
+				case 21: renderTile(x*16,y*16, 240, 64); break;
+				case 22: renderTile(x*16,y*16, 208, 16); break;
+				case 24: renderTile(x*16,y*16, 240, 16); break;
+			}
+			x++;
+		})
+		y++;
+	})
+}
